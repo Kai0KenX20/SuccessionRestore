@@ -1,38 +1,45 @@
-name: Build iOS IPA
+name: Build Unsigned iOS IPA
 
 on:
-  workflow_dispatch:  # lets you trigger manually from GitHub Actions tab
+  workflow_dispatch:  # Run manually from the Actions tab
 
 jobs:
   build:
     runs-on: macos-latest
 
     steps:
+      # Step 1: Checkout repo
       - name: Checkout repo
         uses: actions/checkout@v4
 
+      # Step 2: Select latest Xcode
       - name: Set up Xcode
         run: |
           sudo xcode-select -s /Applications/Xcode.app
           xcodebuild -version
 
-      - name: Build and Archive
+      # Step 3: Build and Archive without signing
+      - name: Build and Archive (No Signing)
         run: |
           xcodebuild -project SuccessionRestore.xcodeproj \
                      -scheme SuccessionRestore \
                      -sdk iphoneos \
                      -configuration Release \
-                     archive -archivePath $PWD/build/SuccessionRestore.xcarchive
+                     archive -archivePath $PWD/build/SuccessionRestore.xcarchive \
+                     CODE_SIGN_IDENTITY="" CODE_SIGNING_REQUIRED=NO CODE_SIGNING_ALLOWED=NO
 
-      - name: Export IPA
+      # Step 4: Export IPA (Unsigned)
+      - name: Export Unsigned IPA
         run: |
           xcodebuild -exportArchive \
                      -archivePath $PWD/build/SuccessionRestore.xcarchive \
                      -exportPath $PWD/build/ipa \
-                     -exportOptionsPlist SuccessionEntitlements.plist || true
+                     -exportOptionsPlist SuccessionEntitlements.plist \
+                     CODE_SIGN_IDENTITY="" CODE_SIGNING_REQUIRED=NO CODE_SIGNING_ALLOWED=NO || true
 
-      - name: Upload IPA Artifact
+      # Step 5: Upload IPA as an artifact
+      - name: Upload Unsigned IPA
         uses: actions/upload-artifact@v4
         with:
-          name: SuccessionRestore-IPA
+          name: SuccessionRestore-IPA-Unsigned
           path: build/ipa

@@ -15,8 +15,9 @@ Succession is both an IPSW downloader/extractor and DMG mounter, allowing the ab
 Once this occurs, `mobile_obliterator` (aka "Erase all Content and Settings") is called to complete the restore. **This is NOT dangerous, as files have been correctly replaced with cleaner versions and your device is unjailbroken at this point.**
 
 ### Device Support
-- All devices running iOS 10.0 or newer are fully supported
-- Devices running iOS 8.0-9.3.5 are supported **(exclduing the iPad Pro 12.9", iPad Pro 9.7", and iPhone 6s+)** through the usage of decryption keys provided by [theiphonewiki](https://www.theiphonewiki.com/). Succession will be able to support the currently excluded devices as soon as decryption keys are posted there, and this will not require an update to Succesion to include support.
+- The Xcode project now targets iOS 26.0 as the minimum deployment, so the app requires iOS 26 or newer to run.
+- Modern 64-bit hardware (arm64/arm64e), including iPhone 17 Pro Max, iPhone 16 Pro Max, and current-generation iPad Pro models, is fully supported.
+- Devices that remain on earlier iOS releases must be updated before installing this build of Succession; consult legacy packages if you need support for historical firmware.
 
 ### Installation
 If you'd like to go back to stock iOS, you can obtain Succession from:

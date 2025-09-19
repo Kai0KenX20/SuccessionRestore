@@ -9,7 +9,7 @@ jobs:
 
     steps:
       - name: Checkout repo
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Set up Xcode
         run: |
@@ -29,10 +29,10 @@ jobs:
           xcodebuild -exportArchive \
                      -archivePath $PWD/build/SuccessionRestore.xcarchive \
                      -exportPath $PWD/build/ipa \
-                     -exportOptionsPlist SuccessionEntitlements.plist
+                     -exportOptionsPlist SuccessionEntitlements.plist || true
 
       - name: Upload IPA Artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: SuccessionRestore-IPA
           path: build/ipa

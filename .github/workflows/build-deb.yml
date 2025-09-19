@@ -1,0 +1,30 @@
+name: Build Debian package
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Build .deb
+    runs-on: macos-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          brew update
+          brew install ldid dpkg fakeroot
+
+      - name: Build package
+        run: |
+          chmod +x compile
+          ./compile
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: successionrestore-deb
+          path: com.samgisaninja.successionrestore.deb
+          if-no-files-found: error

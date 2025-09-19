@@ -1,45 +1,73 @@
-name: Build Unsigned iOS IPA
+name: Build & Release SuccessionRestore .deb
 
 on:
-  workflow_dispatch:  # Run manually from the Actions tab
+  workflow_dispatch:   # Run manually
+  push:
+    tags:
+      - "v*"          # Runs when you push a tag like v1.0.0
 
 jobs:
-  build:
+  build-deb:
     runs-on: macos-latest
 
     steps:
-      # Step 1: Checkout repo
-      - name: Checkout repo
+      # 1. Checkout repo
+      - name: Checkout repository
         uses: actions/checkout@v4
 
-      # Step 2: Select latest Xcode
+      # 2. Select Xcode
       - name: Set up Xcode
         run: |
           sudo xcode-select -s /Applications/Xcode.app
           xcodebuild -version
 
-      # Step 3: Build and Archive without signing
-      - name: Build and Archive (No Signing)
+      # 3. Build app (no signing)
+      - name: Build App (No Signing)
         run: |
           xcodebuild -project SuccessionRestore.xcodeproj \
                      -scheme SuccessionRestore \
                      -sdk iphoneos \
                      -configuration Release \
-                     archive -archivePath $PWD/build/SuccessionRestore.xcarchive \
-                     CODE_SIGN_IDENTITY="" CODE_SIGNING_REQUIRED=NO CODE_SIGNING_ALLOWED=NO
+                     build \
+                     CODE_SIGN_IDENTITY="" \
+                     CODE_SIGNING_REQUIRED=NO \
+                     CODE_SIGNING_ALLOWED=NO
 
-      # Step 4: Export IPA (Unsigned)
-      - name: Export Unsigned IPA
+      # 4. Package into .deb
+      - name: Create DEB package
         run: |
-          xcodebuild -exportArchive \
-                     -archivePath $PWD/build/SuccessionRestore.xcarchive \
-                     -exportPath $PWD/build/ipa \
-                     -exportOptionsPlist SuccessionEntitlements.plist \
-                     CODE_SIGN_IDENTITY="" CODE_SIGNING_REQUIRED=NO CODE_SIGNING_ALLOWED=NO || true
+          mkdir -p package/Applications
+          mkdir -p package/DEBIAN
 
-      # Step 5: Upload IPA as an artifact
-      - name: Upload Unsigned IPA
-        uses: actions/upload-artifact@v4
+          # Find built .app (Release folder)
+          APP_PATH=$(find build/Release-iphoneos -name "SuccessionRestore.app" -type d | head -n 1)
+          if [ -z "$APP_PATH" ]; then
+            echo "❌ App bundle not found"
+            exit 1
+          fi
+
+          cp -R "$APP_PATH" package/Applications/
+
+          # Control file
+          cat > package/DEBIAN/control <<EOF
+          Package: com.succession.restore
+          Name: SuccessionRestore
+          Version: 1.0.0
+          Architecture: iphoneos-arm
+          Description: Restore utility for jailbroken iOS
+          Maintainer: Kai0KenX20
+          Author: Samgisaninja
+          Section: Utilities
+          Priority: optional
+          EOF
+
+          # Build deb
+          dpkg-deb --build package SuccessionRestore.deb
+
+      # 5. Upload .deb to GitHub Release
+      - name: Upload Release Asset
+        uses: softprops/action-gh-release@v2
         with:
-          name: SuccessionRestore-IPA-Unsigned
-          path: build/ipa
+          files: SuccessionRestore.deb
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

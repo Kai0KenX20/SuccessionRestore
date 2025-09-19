@@ -8,6 +8,7 @@ on:
   pull_request:
     branches:
       - main
+  workflow_dispatch:
 
 jobs:
   build-deb:
@@ -21,10 +22,13 @@ jobs:
       - name: Set Xcode Version
         run: sudo xcode-select -s /Applications/Xcode_16.4.app
 
+      - name: Install dpkg
+        run: brew install dpkg
+
       - name: Update iOS Deployment Target
         run: |
           sed -i '' 's/IPHONEOS_DEPLOYMENT_TARGET = 26.0;/IPHONEOS_DEPLOYMENT_TARGET = 18.0;/g' \
-          SuccessionRestore/SuccessionRestore.xcodeproj/project.pbxproj
+            SuccessionRestore/SuccessionRestore.xcodeproj/project.pbxproj
 
       - name: Build App
         run: |
@@ -33,25 +37,20 @@ jobs:
             -sdk iphoneos \
             -configuration Release \
             build \
-            CODE_SIGN_IDENTITY= \
+            CODE_SIGN_IDENTITY="" \
             CODE_SIGNING_REQUIRED=NO \
             CODE_SIGNING_ALLOWED=NO
 
       - name: Package App into .deb
         run: |
-          # Find the app bundle in DerivedData
           APP_BUNDLE=$(find /Users/runner/Library/Developer/Xcode/DerivedData/SuccessionRestore-*/Build/Products/Release-iphoneos -name "SuccessionRestore.app" -type d)
           if [ -z "$APP_BUNDLE" ]; then
             echo "❌ App bundle not found"
             exit 1
           fi
           echo "Found app bundle at: $APP_BUNDLE"
-
-          # Create .deb package structure
           mkdir -p deb_package/Applications
           cp -r "$APP_BUNDLE" deb_package/Applications/
-          
-          # Create DEBIAN directory and control file
           mkdir -p deb_package/DEBIAN
           cat << EOF > deb_package/DEBIAN/control
 Package: com.youridentifier.successionrestore
@@ -64,9 +63,8 @@ Author: Your Name
 Section: Utilities
 Depends: firmware (>= 14.0)
 EOF
-
-          # Build the .deb package
           dpkg-deb -b deb_package SuccessionRestore.deb
+          mkdir -p build
           mv SuccessionRestore.deb build/
 
       - name: Upload Artifacts
